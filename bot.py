@@ -191,9 +191,9 @@ def handle_tickers(message, plan):
 
 def send_payment_link(chat_id, plan):
     if plan == 'Plan Básico':
-        payment_link = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-8BJ89325NN459954FM5M625I"
+        payment_link = "https://www.paypal.com/ncp/payment/69XUA69WNW88N"
     else:
-        payment_link = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-6LM28933PE8419401M5M64MQ"
+        payment_link = "https://www.paypal.com/ncp/payment/L2EAYV77BQS6S"
 
     bot.send_message(chat_id, f"Gracias por tu preferencia. Aquí está tu link de pago: {payment_link}")
     bot.send_message(chat_id, "Este es tu link de pago de acuerdo al plan que has seleccionado. Tenlo por aquí en cuenta, una vez tu periodo de prueba gratuita esté por concluir, te enviaremos un recordatorio con tu nuevo link de pago.")

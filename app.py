@@ -3,7 +3,7 @@ import psycopg2  # Para manejar la base de datos
 import os
 
 # Configura tu base de datos
-DB_URL = os.getenv("DB_URL", "tu_url_de_base_de_datos_aqui")
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:dhFTmlmpvcveKIINwsRIGaszgwDWfERR@postgres-q-ls.railway.internal:5432/railway")
 
 # Crear aplicación Flask
 app = Flask(__name__)

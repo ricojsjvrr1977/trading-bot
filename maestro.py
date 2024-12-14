@@ -15,11 +15,11 @@ DB_CONFIG = {
 }
 
 # Configuración de PayPal
-PAYPAL_CLIENT_ID = 'AfXKDZFvIOS3RkD0bViTN8VibRsmKJEkaG4nMj_B_Pp0mTcSCgIFF3Oc3mrFMF6bT7ANsX71zozdp75y'
-PAYPAL_SECRET = 'EFVLUnC3d8FY4Nyf2gfBprZfgj3E2kMskeRkbUy0dlSPeoayIQUqjyk-K_nWHHK3fymfnn8tGeJlUvcH'
+PAYPAL_CLIENT_ID = 'Ad0coMikTu4Rle9n_xWP1tmupmfXnA9ZKtJYz25H3Gd1GG0hDmH6YAfhFWZWn5-vDoe1GcPasn4tcYYG'
+PAYPAL_SECRET = 'EEnLU5SMk-w0JqodBZotJtv8utEwsloa9JG21X8m3JYUUrGnaLG3_LyPJ4ephwzVv-hDI3zWx7LDSDdF'
 
 paypalrestsdk.configure({
-    "mode": "sandbox",
+    "mode": "sandbox",  # Cambiar a "live" para producción
     "client_id": PAYPAL_CLIENT_ID,
     "client_secret": PAYPAL_SECRET
 })
@@ -39,14 +39,14 @@ def get_active_users():
     conn = connect_db()
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT id, username, email, telegram_id, subscription_plan, tickers, analysis_type, subscription_active 
+            SELECT id, username, email, telegram_id, subscription_plan, tickers, analysis_type, subscription_active, start_date, end_date 
             FROM users WHERE subscription_active = TRUE;
         """)
         users = cur.fetchall()
     conn.close()
     return users
 
-# Proceso de prueba gratuita
+# Iniciar la prueba gratuita
 def start_trial(user_id):
     conn = connect_db()
     with conn.cursor() as cur:
@@ -54,17 +54,17 @@ def start_trial(user_id):
             UPDATE users 
             SET subscription_active = TRUE, 
                 start_date = NOW(), 
-                end_date = NOW() + interval '2 days' 
+                end_date = NOW() + interval '14 days' 
             WHERE id = %s;
         """, (user_id,))
         conn.commit()
 
-# Enviar notificaciones de vencimiento
+# Enviar notificaciones de vencimiento (día 14)
 def notify_expiration():
     conn = connect_db()
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT id, telegram_id FROM users 
+            SELECT id, telegram_id, end_date FROM users 
             WHERE end_date <= NOW() + interval '1 day' 
             AND subscription_active = TRUE;
         """)
@@ -83,7 +83,7 @@ def send_telegram_message(chat_id, message):
 
 # Generar pago PayPal
 def generate_paypal_payment_link(user_id, plan):
-    price = 1.0 if plan == "basic" else 1.5
+    price = 1.0 if plan == "basic" else 2
     payment = paypalrestsdk.Payment({
         "intent": "sale",
         "payer": {"payment_method": "paypal"},
@@ -119,7 +119,7 @@ def verify_payment(payment_id):
 
 # Reporte semanal
 def send_weekly_report():
-    message = "📈 *Reporte semanal*\n- Suscriptores: 50\n- Ganancias: $500\n- Planes: Básico: 30, Avanzado: 20"
+    message = "📈 *Reporte semanal*\n- Suscriptores: 50\n- Ganancias: $500\n- Planes: Básico: 35, Avanzado: 20"
     url = f'https://api.telegram.org/bot{TELEGRAM_REPORT_BOT_TOKEN}/sendMessage'
     payload = {'chat_id': TELEGRAM_REPORT_CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
     requests.post(url, data=payload)
