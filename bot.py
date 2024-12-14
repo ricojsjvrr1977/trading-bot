@@ -198,6 +198,11 @@ def send_payment_link(chat_id, plan):
     bot.send_message(chat_id, f"Gracias por tu preferencia. Aquí está tu link de pago: {payment_link}")
     bot.send_message(chat_id, "Este es tu link de pago de acuerdo al plan que has seleccionado. Tenlo por aquí en cuenta, una vez tu periodo de prueba gratuita esté por concluir, te enviaremos un recordatorio con tu nuevo link de pago.")
 
+# Actualización del webhook en vez de polling
 if __name__ == "__main__":
-    print("🤖 Bot de Telegram iniciado.")
+    # Configurar webhook
+    bot.remove_webhook()
+    bot.set_webhook(url="https://tradingbot-production-1412.up.railway.app/paypal-webhook")  # Usa tu URL generada en Railway
+
+    print("🤖 Bot de Telegram iniciado en webhook.")
     bot.infinity_polling()
