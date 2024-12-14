@@ -46,7 +46,7 @@ def get_active_users():
     conn.close()
     return users
 
-# Iniciar la prueba gratuita
+# Iniciar la prueba gratuita de 14 días
 def start_trial(user_id):
     conn = connect_db()
     with conn.cursor() as cur:
