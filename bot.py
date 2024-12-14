@@ -205,4 +205,3 @@ if __name__ == "__main__":
     bot.set_webhook(url="https://tradingbot-production-1412.up.railway.app/paypal-webhook")  # Usa tu URL generada en Railway
 
     print("🤖 Bot de Telegram iniciado en webhook.")
-    bot.infinity_polling()  # Este se mantiene en el caso de que desee seguir usando el polling. El webhook debería funcionar. 
