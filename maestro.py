@@ -7,11 +7,11 @@ from datetime import datetime, timedelta
 
 # Configuración de la base de datos
 DB_CONFIG = {
-    "host": "junction.proxy.rlwy.net",
+    "host": "autorack.proxy.rlwy.net",
     "database": "railway",
     "user": "postgres",
-    "password": "EuXtszvtkOoQaBwbvuNpQQCjIIukLQAT",
-    "port": "57247",
+    "password": "dhFTmlmpvcveKIINwsRIGaszgwDWfERR",
+    "port": "39614",
 }
 
 # Configuración de PayPal
