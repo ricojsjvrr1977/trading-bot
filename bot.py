@@ -30,23 +30,33 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
         if not conn:
             return
 
+        # Verificar si el usuario ya existe
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO users (user_id, first_name, last_name, username, telegram_id, plan, tickers, email) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
-                ON CONFLICT (user_id) DO NOTHING;
-            """, (
-                user_id, 
-                first_name, 
-                last_name, 
-                username, 
-                telegram_id,
-                plan or 'Pendiente',
-                tickers or '',
-                email or ''
-            ))
-            conn.commit()
-            print(f"✅ Usuario {first_name} {last_name} registrado con éxito.")
+                SELECT COUNT(*) FROM users WHERE user_id = %s;
+            """, (user_id,))
+            exists = cur.fetchone()[0]
+
+            if exists == 0:
+                # Si no existe, insertamos el usuario
+                cur.execute("""
+                    INSERT INTO users (user_id, first_name, last_name, username, telegram_id, plan, tickers, email) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+                """, (
+                    user_id, 
+                    first_name, 
+                    last_name, 
+                    username, 
+                    telegram_id,
+                    plan or 'Pendiente',
+                    tickers or '',
+                    email or ''
+                ))
+                conn.commit()
+                print(f"✅ Usuario {first_name} {last_name} registrado con éxito.")
+            else:
+                print(f"⚠️ El usuario {first_name} {last_name} ya está registrado.")
+
     except Exception as e:
         print(f"❌ Error al guardar el usuario: {e}")
     finally:
