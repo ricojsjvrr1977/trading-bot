@@ -2,8 +2,7 @@ from celery import Celery
 import os
 
 # Obtener la URL de Redis desde las variables de entorno
-redis_url = os.getenv('REDIS_URL', 'redis://default:dapYHNuAoJsGZbjiWJslsSMnzVZDsihU@redis.railway.internal:6379')
-
+redis_url = os.getenv('REDIS_URL', 'redis://default:lYwhAvPrrocBWhHmVWPvEmsVsEizKvRu@redis.railway.internal:6379')
 # Configuración de Celery
 celery = Celery('tasks', broker=redis_url)
 
