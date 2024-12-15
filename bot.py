@@ -62,7 +62,6 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
     finally:
         if conn:
             conn.close()
-
 # Función para mostrar el disclaimer completo
 @bot.message_handler(commands=['start'])
 def send_welcome_with_disclaimer(message):
