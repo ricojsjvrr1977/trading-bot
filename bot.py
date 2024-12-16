@@ -30,7 +30,6 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
         if not conn:
             return
 
-        # Verificar si el usuario ya existe
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT COUNT(*) FROM users WHERE user_id = %s;
@@ -38,7 +37,6 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
             exists = cur.fetchone()[0]
 
             if exists == 0:
-                # Si no existe, insertamos el usuario
                 cur.execute("""
                     INSERT INTO users (user_id, first_name, last_name, username, telegram_id, plan, tickers, email) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
@@ -79,34 +77,12 @@ def send_welcome_with_disclaimer(message):
         """, (chat_id,))
         exists = cur.fetchone()[0]
         if exists == 0:
-            # Si el usuario no está registrado, continuar con el flujo de registro
             disclaimer_message = f"""
             🌟 *¡Gracias por la confianza en nosotros, {first_name}! ¡Te damos la bienvenida a nuestra familia!*
 
             🎉 ¡Bienvenido/a al Sistema de Señales de Trading de *Latino Swing Trading*! 🚀
 
             📈 Con nosotros, estarás un paso más cerca de tomar decisiones de inversión informadas, ¡y lo mejor es que te ayudamos a hacerlo de forma *automatizada*, precisa y oportuna!
-
-            🔹 Nuestro objetivo es brindarte las herramientas necesarias para maximizar tu rendimiento. ¡Aquí recibirás señales de trading **confiables y oportunas**! 🎯
-
-            📢 *¡No olvides seguirnos en nuestras redes sociales para estar al día con todas las novedades y consejos!* 
-
-            ➡️ Instagram: [@latinoswingtrading](https://www.instagram.com/latinoswingtrading) 
-            ➡️ TikTok: [@latinosswingtrading](https://www.tiktok.com/@latinosswingtrading) 
-
-            🔹 **Antes de continuar, revisa este aviso importante:**
-
-            ⚠️ *Aviso de Riesgo* ⚠️
-            ⚠️ *Advertencia de riesgo* ⚠️
-            Invertir en el mercado de valores implica riesgos significativos, incluyendo la posible pérdida de su capital. Los precios de las acciones son altamente volátiles y están influenciados por condiciones del mercado, factores económicos y eventos imprevistos.
-
-            📚 *Propósito de respaldo* 📚
-            Los análisis y señales proporcionados por esta herramienta son únicamente para fines informativos y de respaldo. No deben considerarse como asesoramiento financiero ni como una recomendación final para comprar, vender o mantener ningún valor.
-
-            💡 *Responsabilidad del usuario* 💡
-            Los usuarios son los únicos responsables de sus decisiones de inversión. Recomendamos encarecidamente que realice su propia investigación y consulte con un asesor financiero licenciado para evaluar su tolerancia al riesgo y sus objetivos de inversión.
-
-            ✅ *Al usar este bot, aceptas que comprendes los riesgos y estás de acuerdo con estos términos.*
             """
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
             accept_button = types.KeyboardButton("Sí, he leído y entiendo los riesgos")
@@ -117,7 +93,6 @@ def send_welcome_with_disclaimer(message):
             bot.send_message(chat_id, "Por favor, confirma si has leído y entendido los riesgos asociados.", reply_markup=markup)
             bot.register_next_step_handler(message, process_disclaimer_response)
         else:
-            # Si el usuario ya está registrado, saltarse el flujo de registro y continuar
             bot.send_message(chat_id, "¡Ya estás registrado! Vamos a continuar con la selección de tu plan y tickers.")
             ask_for_plan(chat_id)
 
@@ -128,8 +103,7 @@ def process_disclaimer_response(message):
         bot.send_message(chat_id, "Gracias por aceptar los términos. Ahora, por favor, ingresa tu primer nombre:")
         bot.register_next_step_handler(message, process_first_name)
     else:
-        bot.send_message(chat_id, "Gracias por tu tiempo. Si deseas reconsiderar los riesgos, por favor intenta registrarte nuevamente más tarde.")
-        bot.send_message(chat_id, "Te deseamos lo mejor en tus decisiones de inversión. ¡Hasta pronto! 👋")
+        bot.send_message(chat_id, "Gracias por tu tiempo. ¡Hasta pronto! 👋")
 
 # Continuar con el flujo de selección de plan
 def ask_for_plan(chat_id):
@@ -142,47 +116,37 @@ def ask_for_plan(chat_id):
     @bot.message_handler(func=lambda message: message.text in ['Plan Básico', 'Plan Avanzado'])
     def handle_plan(message):
         plan = message.text
-        bot.send_message(message.chat.id, f"Has seleccionado el {plan}. Ahora, por favor, ingresa los tickers (separados por comas seguido de espacios despues de cada coma, Ejemplo: AAPL, MSFT, TSLA).")
+        bot.send_message(message.chat.id, f"Has seleccionado el {plan}. Ahora, por favor, ingresa los tickers (separados por comas, Ejemplo: AAPL, MSFT, TSLA).")
         bot.register_next_step_handler(message, handle_tickers, plan)
 
 def handle_tickers(message, plan):
     tickers = message.text.split(',')
     tickers = [ticker.strip() for ticker in tickers]
 
-    # Validar el número de tickers según el plan
     if plan == "Plan Básico" and len(tickers) > 4:
-        bot.send_message(message.chat.id, "⚠️ ¡Advertencia! El Plan Básico solo permite un máximo de 4 tickers. Por favor, ingresa hasta 4 tickers.")
-        bot.send_message(message.chat.id, "Por favor, ingresa los tickers separados por comas (Ejemplo: AAPL, MSFT, TSLA).")
+        bot.send_message(message.chat.id, "⚠️ El Plan Básico solo permite un máximo de 4 tickers.")
         bot.register_next_step_handler(message, handle_tickers, plan)
         return
     elif plan == "Plan Avanzado" and len(tickers) > 8:
-        bot.send_message(message.chat.id, "⚠️ ¡Advertencia! El Plan Avanzado solo permite un máximo de 8 tickers. Por favor, ingresa hasta 8 tickers.")
-        bot.send_message(message.chat.id, "Por favor, ingresa los tickers separados por comas (Ejemplo: AAPL, MSFT, TSLA).")
+        bot.send_message(message.chat.id, "⚠️ El Plan Avanzado solo permite un máximo de 8 tickers.")
         bot.register_next_step_handler(message, handle_tickers, plan)
         return
 
-    bot.send_message(message.chat.id, f"Por favor, asegúrate de que los tickers sean correctos: {', '.join(tickers)}.\n")
-    example_message = (
-        "Ejemplo: AAPL, MSFT, TSLA\n\n"
-        "Por favor, asegúrate de separar los tickers con comas (Ejemplo: AAPL, MSFT, TSLA)."
-    )
-    bot.send_message(message.chat.id, example_message)
-
+    bot.send_message(message.chat.id, f"Tickers confirmados: {', '.join(tickers)}")
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     yes_button = types.KeyboardButton("Sí")
     no_button = types.KeyboardButton("No")
     markup.add(yes_button, no_button)
-    bot.send_message(message.chat.id, "¿Estás seguro de que los tickers son correctos?", reply_markup=markup)
+    bot.send_message(message.chat.id, "¿Los tickers son correctos?", reply_markup=markup)
 
     @bot.message_handler(func=lambda message: message.text in ['Sí', 'No'])
     def confirm_tickers(message):
         if message.text == 'Sí':
             save_telegram_user(message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.chat.id, plan, ', '.join(tickers))
-            bot.send_message(message.chat.id, "¡Los tickers han sido guardados exitosamente!")
+            bot.send_message(message.chat.id, "¡Tickers guardados exitosamente!")
             send_payment_link(message.chat.id, plan)
         else:
-            bot.send_message(message.chat.id, "Por favor, ingresa los tickers nuevamente.")
-            bot.send_message(message.chat.id, "Por favor, ingresa los tickers separados por comas (Ejemplo: AAPL, MSFT, TSLA).")
+            bot.send_message(message.chat.id, "Ingresa los tickers nuevamente.")
             bot.register_next_step_handler(message, handle_tickers, plan)
 
 def send_payment_link(chat_id, plan):
@@ -191,13 +155,17 @@ def send_payment_link(chat_id, plan):
     else:
         payment_link = "https://www.paypal.com/ncp/payment/L2EAYV77BQS6S"
 
-    bot.send_message(chat_id, f"Gracias por tu preferencia. Aquí está tu link de pago: {payment_link}")
-    bot.send_message(chat_id, "Este es tu link de pago de acuerdo al plan que has seleccionado. Tenlo por aquí en cuenta, una vez tu periodo de prueba gratuita esté por concluir, te enviaremos un recordatorio con tu nuevo link de pago.")
+    bot.send_message(chat_id, f"Link de pago: {payment_link}")
 
-# Actualización del webhook en vez de polling
+# Configurar webhook
+def start_webhook():
+    webhook_url = 'https://tradingbot-production-1412.up.railway.app/paypal-webhook'
+    try:
+        bot.remove_webhook()
+        bot.set_webhook(url=webhook_url)
+        print("🤖 Webhook configurado correctamente.")
+    except Exception as e:
+        print(f"❌ Error al configurar el webhook: {e}")
+
 if __name__ == "__main__":
-    # Configurar webhook
-    bot.remove_webhook()
-    bot.set_webhook(url="https://tradingbot-production-1412.up.railway.app/paypal-webhook")  # Usa tu URL generada en Railway
-
-    print("🤖 Bot de Telegram iniciado en webhook.")
+    start_webhook()
