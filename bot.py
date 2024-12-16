@@ -62,6 +62,7 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
     finally:
         if conn:
             conn.close()
+
 # Función para mostrar el disclaimer completo
 @bot.message_handler(commands=['start'])
 def send_welcome_with_disclaimer(message):
@@ -70,43 +71,55 @@ def send_welcome_with_disclaimer(message):
     last_name = message.chat.last_name
     username = message.chat.username
 
-    disclaimer_message = f"""
-    🌟 *¡Gracias por la confianza en nosotros, {first_name}! ¡Te damos la bienvenida a nuestra familia!*
+    # Verificar si el usuario ya está registrado
+    conn = connect_db()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT COUNT(*) FROM users WHERE user_id = %s;
+        """, (chat_id,))
+        exists = cur.fetchone()[0]
+        if exists == 0:
+            # Si el usuario no está registrado, continuar con el flujo de registro
+            disclaimer_message = f"""
+            🌟 *¡Gracias por la confianza en nosotros, {first_name}! ¡Te damos la bienvenida a nuestra familia!*
 
-    🎉 ¡Bienvenido/a al Sistema de Señales de Trading de *Latino Swing Trading*! 🚀
+            🎉 ¡Bienvenido/a al Sistema de Señales de Trading de *Latino Swing Trading*! 🚀
 
-    📈 Con nosotros, estarás un paso más cerca de tomar decisiones de inversión informadas, ¡y lo mejor es que te ayudamos a hacerlo de forma *automatizada*, precisa y oportuna!
+            📈 Con nosotros, estarás un paso más cerca de tomar decisiones de inversión informadas, ¡y lo mejor es que te ayudamos a hacerlo de forma *automatizada*, precisa y oportuna!
 
-    🔹 Nuestro objetivo es brindarte las herramientas necesarias para maximizar tu rendimiento. ¡Aquí recibirás señales de trading **confiables y oportunas**! 🎯
+            🔹 Nuestro objetivo es brindarte las herramientas necesarias para maximizar tu rendimiento. ¡Aquí recibirás señales de trading **confiables y oportunas**! 🎯
 
-    📢 *¡No olvides seguirnos en nuestras redes sociales para estar al día con todas las novedades y consejos!* 
+            📢 *¡No olvides seguirnos en nuestras redes sociales para estar al día con todas las novedades y consejos!* 
 
-    ➡️ Instagram: [@latinoswingtrading](https://www.instagram.com/latinoswingtrading) 
-    ➡️ TikTok: [@latinosswingtrading](https://www.tiktok.com/@latinosswingtrading) 
+            ➡️ Instagram: [@latinoswingtrading](https://www.instagram.com/latinoswingtrading) 
+            ➡️ TikTok: [@latinosswingtrading](https://www.tiktok.com/@latinosswingtrading) 
 
-    🔹 **Antes de continuar, revisa este aviso importante:**
+            🔹 **Antes de continuar, revisa este aviso importante:**
 
-    ⚠️ *Aviso de Riesgo* ⚠️
-    ⚠️ *Advertencia de riesgo* ⚠️
-    Invertir en el mercado de valores implica riesgos significativos, incluyendo la posible pérdida de su capital. Los precios de las acciones son altamente volátiles y están influenciados por condiciones del mercado, factores económicos y eventos imprevistos.
+            ⚠️ *Aviso de Riesgo* ⚠️
+            ⚠️ *Advertencia de riesgo* ⚠️
+            Invertir en el mercado de valores implica riesgos significativos, incluyendo la posible pérdida de su capital. Los precios de las acciones son altamente volátiles y están influenciados por condiciones del mercado, factores económicos y eventos imprevistos.
 
-    📚 *Propósito de respaldo* 📚
-    Los análisis y señales proporcionados por esta herramienta son únicamente para fines informativos y de respaldo. No deben considerarse como asesoramiento financiero ni como una recomendación final para comprar, vender o mantener ningún valor.
+            📚 *Propósito de respaldo* 📚
+            Los análisis y señales proporcionados por esta herramienta son únicamente para fines informativos y de respaldo. No deben considerarse como asesoramiento financiero ni como una recomendación final para comprar, vender o mantener ningún valor.
 
-    💡 *Responsabilidad del usuario* 💡
-    Los usuarios son los únicos responsables de sus decisiones de inversión. Recomendamos encarecidamente que realice su propia investigación y consulte con un asesor financiero licenciado para evaluar su tolerancia al riesgo y sus objetivos de inversión.
+            💡 *Responsabilidad del usuario* 💡
+            Los usuarios son los únicos responsables de sus decisiones de inversión. Recomendamos encarecidamente que realice su propia investigación y consulte con un asesor financiero licenciado para evaluar su tolerancia al riesgo y sus objetivos de inversión.
 
-    ✅ *Al usar este bot, aceptas que comprendes los riesgos y estás de acuerdo con estos términos.*
-    """
+            ✅ *Al usar este bot, aceptas que comprendes los riesgos y estás de acuerdo con estos términos.*
+            """
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+            accept_button = types.KeyboardButton("Sí, he leído y entiendo los riesgos")
+            decline_button = types.KeyboardButton("No, gracias")
+            markup.add(accept_button, decline_button)
 
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    accept_button = types.KeyboardButton("Sí, he leído y entiendo los riesgos")
-    decline_button = types.KeyboardButton("No, gracias")
-    markup.add(accept_button, decline_button)
-
-    bot.send_message(chat_id, disclaimer_message, parse_mode='Markdown')
-    bot.send_message(chat_id, "Por favor, confirma si has leído y entendido los riesgos asociados.", reply_markup=markup)
-    bot.register_next_step_handler(message, process_disclaimer_response)
+            bot.send_message(chat_id, disclaimer_message, parse_mode='Markdown')
+            bot.send_message(chat_id, "Por favor, confirma si has leído y entendido los riesgos asociados.", reply_markup=markup)
+            bot.register_next_step_handler(message, process_disclaimer_response)
+        else:
+            # Si el usuario ya está registrado, saltarse el flujo de registro y continuar
+            bot.send_message(chat_id, "¡Ya estás registrado! Vamos a continuar con la selección de tu plan y tickers.")
+            ask_for_plan(chat_id)
 
 # Procesar respuesta al disclaimer
 def process_disclaimer_response(message):
@@ -118,33 +131,7 @@ def process_disclaimer_response(message):
         bot.send_message(chat_id, "Gracias por tu tiempo. Si deseas reconsiderar los riesgos, por favor intenta registrarte nuevamente más tarde.")
         bot.send_message(chat_id, "Te deseamos lo mejor en tus decisiones de inversión. ¡Hasta pronto! 👋")
 
-# Pedir nombre y apellido manualmente
-def process_first_name(message):
-    chat_id = message.chat.id
-    first_name = message.text.strip()
-    bot.send_message(chat_id, "Ahora, por favor ingresa tu apellido.")
-    bot.register_next_step_handler(message, process_last_name, first_name)
-
-def process_last_name(message, first_name):
-    chat_id = message.chat.id
-    last_name = message.text.strip()
-    
-    # Guardar el nombre completo en la base de datos
-    save_telegram_user(chat_id, first_name, last_name, message.chat.username, chat_id)
-    
-    # Pedir el correo electrónico
-    bot.send_message(chat_id, "Ahora, por favor ingresa tu correo electrónico:")
-    bot.register_next_step_handler(message, process_email, first_name, last_name)
-
-def process_email(message, first_name, last_name):
-    email = message.text.strip()
-
-    # Guardar el correo electrónico
-    save_telegram_user(message.chat.id, first_name, last_name, message.chat.username, message.chat.id, email=email)
-    
-    # Continuar con el proceso de elegir un plan
-    ask_for_plan(message.chat.id)
-
+# Continuar con el flujo de selección de plan
 def ask_for_plan(chat_id):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     plan_boton = types.KeyboardButton("Plan Básico")
