@@ -61,7 +61,7 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
         if conn:
             conn.close()
 
-# Función para mostrar el disclaimer completo
+# Mostrar el disclaimer completo
 @bot.message_handler(commands=['start'])
 def send_welcome_with_disclaimer(message):
     chat_id = message.chat.id
@@ -69,7 +69,6 @@ def send_welcome_with_disclaimer(message):
     last_name = message.chat.last_name
     username = message.chat.username
 
-    # Verificar si el usuario ya está registrado
     conn = connect_db()
     with conn.cursor() as cur:
         cur.execute("""
@@ -83,6 +82,20 @@ def send_welcome_with_disclaimer(message):
             🎉 ¡Bienvenido/a al Sistema de Señales de Trading de *Latino Swing Trading*! 🚀
 
             📈 Con nosotros, estarás un paso más cerca de tomar decisiones de inversión informadas, ¡y lo mejor es que te ayudamos a hacerlo de forma *automatizada*, precisa y oportuna!
+
+            🔹 Nuestro objetivo es brindarte las herramientas necesarias para maximizar tu rendimiento. ¡Aquí recibirás señales de trading **confiables y oportunas**! 🎯
+            
+            📢 *¡No olvides seguirnos en nuestras redes sociales para estar al día con todas las novedades y consejos!* 
+
+            ➡️ Instagram: [@latinoswingtrading](https://www.instagram.com/latinoswingtrading) 
+            ➡️ TikTok: [@latinosswingtrading](https://www.tiktok.com/@latinosswingtrading) 
+            
+            🔹 **Antes de continuar, revisa este aviso importante:**
+
+            ⚠️ *Aviso de Riesgo* ⚠️
+            Invertir en el mercado de valores implica riesgos significativos, incluyendo la posible pérdida de su capital.
+
+            ✅ *Al usar este bot, aceptas que comprendes los riesgos y estás de acuerdo con estos términos.*
             """
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
             accept_button = types.KeyboardButton("Sí, he leído y entiendo los riesgos")
@@ -101,7 +114,7 @@ def process_disclaimer_response(message):
     chat_id = message.chat.id
     if message.text == "Sí, he leído y entiendo los riesgos":
         bot.send_message(chat_id, "Gracias por aceptar los términos. Ahora, por favor, ingresa tu primer nombre:")
-        bot.register_next_step_handler(message, process_first_name)
+        bot.register_next_step_handler(message, ask_for_plan)
     else:
         bot.send_message(chat_id, "Gracias por tu tiempo. ¡Hasta pronto! 👋")
 
@@ -116,7 +129,7 @@ def ask_for_plan(chat_id):
     @bot.message_handler(func=lambda message: message.text in ['Plan Básico', 'Plan Avanzado'])
     def handle_plan(message):
         plan = message.text
-        bot.send_message(message.chat.id, f"Has seleccionado el {plan}. Ahora, por favor, ingresa los tickers (separados por comas, Ejemplo: AAPL, MSFT, TSLA).")
+        bot.send_message(message.chat.id, f"Has seleccionado el {plan}. Ahora, por favor, ingresa los tickers (Ejemplo: AAPL, MSFT, TSLA).")
         bot.register_next_step_handler(message, handle_tickers, plan)
 
 def handle_tickers(message, plan):
@@ -124,30 +137,27 @@ def handle_tickers(message, plan):
     tickers = [ticker.strip() for ticker in tickers]
 
     if plan == "Plan Básico" and len(tickers) > 4:
-        bot.send_message(message.chat.id, "⚠️ El Plan Básico solo permite un máximo de 4 tickers.")
-        bot.register_next_step_handler(message, handle_tickers, plan)
+        bot.send_message(message.chat.id, "⚠️ El Plan Básico solo permite un máximo de 4 tickers. Por favor, ingresa hasta 4 tickers.")
         return
     elif plan == "Plan Avanzado" and len(tickers) > 8:
-        bot.send_message(message.chat.id, "⚠️ El Plan Avanzado solo permite un máximo de 8 tickers.")
-        bot.register_next_step_handler(message, handle_tickers, plan)
+        bot.send_message(message.chat.id, "⚠️ El Plan Avanzado solo permite un máximo de 8 tickers. Por favor, ingresa hasta 8 tickers.")
         return
 
-    bot.send_message(message.chat.id, f"Tickers confirmados: {', '.join(tickers)}")
+    bot.send_message(message.chat.id, f"Por favor, asegúrate de que los tickers sean correctos: {', '.join(tickers)}.")
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     yes_button = types.KeyboardButton("Sí")
     no_button = types.KeyboardButton("No")
     markup.add(yes_button, no_button)
-    bot.send_message(message.chat.id, "¿Los tickers son correctos?", reply_markup=markup)
+    bot.send_message(message.chat.id, "¿Estás seguro de que los tickers son correctos?", reply_markup=markup)
 
     @bot.message_handler(func=lambda message: message.text in ['Sí', 'No'])
     def confirm_tickers(message):
         if message.text == 'Sí':
             save_telegram_user(message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.chat.id, plan, ', '.join(tickers))
-            bot.send_message(message.chat.id, "¡Tickers guardados exitosamente!")
+            bot.send_message(message.chat.id, "¡Los tickers han sido guardados exitosamente!")
             send_payment_link(message.chat.id, plan)
         else:
-            bot.send_message(message.chat.id, "Ingresa los tickers nuevamente.")
-            bot.register_next_step_handler(message, handle_tickers, plan)
+            bot.send_message(message.chat.id, "Por favor, ingresa los tickers nuevamente.")
 
 def send_payment_link(chat_id, plan):
     if plan == 'Plan Básico':
@@ -155,17 +165,11 @@ def send_payment_link(chat_id, plan):
     else:
         payment_link = "https://www.paypal.com/ncp/payment/L2EAYV77BQS6S"
 
-    bot.send_message(chat_id, f"Link de pago: {payment_link}")
+    bot.send_message(chat_id, f"Gracias por tu preferencia. Aquí está tu link de pago: {payment_link}")
 
-# Configurar webhook
 def start_webhook():
-    webhook_url = 'https://tradingbot-production-1412.up.railway.app/paypal-webhook'
-    try:
-        bot.remove_webhook()
-        bot.set_webhook(url=webhook_url)
-        print("🤖 Webhook configurado correctamente.")
-    except Exception as e:
-        print(f"❌ Error al configurar el webhook: {e}")
+    bot.remove_webhook()
+    bot.set_webhook(url="https://tradingbot-production-1412.up.railway.app/paypal-webhook")
 
 if __name__ == "__main__":
     start_webhook()
