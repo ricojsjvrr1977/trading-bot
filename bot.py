@@ -3,6 +3,7 @@ import os
 import psycopg2
 from telebot import types
 from datetime import datetime
+from flask import Flask, request
 
 # Configuración de la base de datos
 DB_URL = 'postgresql://postgres:dhFTmlmpvcveKIINwsRIGaszgwDWfERR@autorack.proxy.rlwy.net:39614/railway'
@@ -12,6 +13,9 @@ TELEGRAM_BOT_TOKEN = '7467249877:AAEHXU8hwa0V-4gyIpeVC1ge13-ynAbP0_A'
 
 # Inicialización del bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+
+# Inicialización de la aplicación Flask
+app = Flask(__name__)
 
 # Conexión a la base de datos
 def connect_db():
@@ -109,6 +113,13 @@ def send_payment_link(chat_id, plan):
 
     bot.send_message(chat_id, f"Gracias por tu preferencia. Aquí está tu link de pago: {payment_link}")
 
+# Endpoint del webhook para Telegram
+@app.route('/paypal-webhook', methods=['POST'])
+def telegram_webhook():
+    update = telebot.types.Update.de_json(request.get_json(force=True))
+    bot.process_new_updates([update])
+    return 'OK', 200
+
 # Configurar webhook
 def start_webhook():
     webhook_url = 'https://tradingbot-production-1412.up.railway.app/paypal-webhook'
@@ -119,5 +130,5 @@ def start_webhook():
 
 if __name__ == "__main__":
     start_webhook()
-
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
