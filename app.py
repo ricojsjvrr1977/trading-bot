@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
-import psycopg2  # Para manejar la base de datos
+import psycopg2
 import os
 
-# Configura tu base de datos
+# Configura la base de datos
 DB_URL = os.getenv("DB_URL", "postgresql://postgres:dhFTmlmpvcveKIINwsRIGaszgwDWfERR@postgres-q-ls.railway.internal:5432/railway")
 
 # Crear aplicación Flask
@@ -12,20 +12,13 @@ app = Flask(__name__)
 @app.route('/paypal-webhook', methods=['POST'])
 def paypal_webhook():
     try:
-        # Recibe los datos del webhook de PayPal
-        data = request.json
+        data = request.get_json(force=True)  # Asegurarse de obtener el JSON correctamente
+        print("📥 Datos recibidos del webhook de PayPal:", data)
 
-        # Aquí puedes hacer lo que necesites con los datos del pago
-        print("Datos recibidos del webhook de PayPal:", data)
-
-        # Ejemplo: verifica si el pago fue exitoso
         if data['event_type'] == 'PAYMENT.SALE.COMPLETED':
-            # Aquí es donde actualizamos la base de datos, por ejemplo:
-            # Actualizamos el estado del pago en la base de datos
             user_id = data['resource']['payer']['payer_info']['payer_id']
             status = 'active'
-            
-            # Conecta a la base de datos y actualiza el estado
+
             conn = psycopg2.connect(DB_URL)
             with conn.cursor() as cursor:
                 cursor.execute("""
@@ -33,14 +26,17 @@ def paypal_webhook():
                     SET subscription_status = %s
                     WHERE user_id = %s;
                 """, (status, user_id))
+                if cursor.rowcount == 0:
+                    print(f"⚠️ No se encontró un usuario con user_id = {user_id}")
                 conn.commit()
             conn.close()
 
         return jsonify({"status": "success"}), 200
 
     except Exception as e:
-        print("Error al procesar el webhook de PayPal:", e)
+        print(f"❌ Error al procesar el webhook de PayPal: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)

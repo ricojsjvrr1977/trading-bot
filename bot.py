@@ -6,10 +6,10 @@ from datetime import datetime
 from flask import Flask, request
 
 # Configuración de la base de datos
-DB_URL = 'postgresql://postgres:dhFTmlmpvcveKIINwsRIGaszgwDWfERR@autorack.proxy.rlwy.net:39614/railway'
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:dhFTmlmpvcveKIINwsRIGaszgwDWfERR@autorack.proxy.rlwy.net:39614/railway")
 
 # Configuración del bot de Telegram
-TELEGRAM_BOT_TOKEN = '7467249877:AAEHXU8hwa0V-4gyIpeVC1ge13-ynAbP0_A'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7467249877:AAEHXU8hwa0V-4gyIpeVC1ge13-ynAbP0_A")
 
 # Inicialización del bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -116,17 +116,25 @@ def send_payment_link(chat_id, plan):
 # Endpoint del webhook para Telegram
 @app.route('/paypal-webhook', methods=['POST'])
 def telegram_webhook():
-    update = telebot.types.Update.de_json(request.get_json(force=True))
-    bot.process_new_updates([update])
-    return 'OK', 200
+    try:
+        update = telebot.types.Update.de_json(request.get_json(force=True))
+        bot.process_new_updates([update])
+        return 'OK', 200
+    except Exception as e:
+        print(f"❌ Error al procesar el webhook de Telegram: {e}")
+        return 'Internal Server Error', 500
 
 # Configurar webhook
 def start_webhook():
     webhook_url = 'https://tradingbot-production-1412.up.railway.app/paypal-webhook'
-    print("🔄 Eliminando webhook existente...")
-    bot.remove_webhook()
-    print("🟢 Configurando nuevo webhook...")
-    bot.set_webhook(url=webhook_url)
+    try:
+        print("🔄 Eliminando webhook existente...")
+        bot.remove_webhook()
+        print("🟢 Configurando nuevo webhook...")
+        result = bot.set_webhook(url=webhook_url)
+        print(f"🟢 Webhook configurado correctamente: {result}")
+    except Exception as e:
+        print(f"❌ Error configurando el webhook: {e}")
 
 if __name__ == "__main__":
     start_webhook()
