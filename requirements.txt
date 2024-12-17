@@ -6,3 +6,6 @@ telebot
 xgboost
 scikit-learn
 yfinance
+Flask
+pyTelegramBotAPI
+psycopg2-binary
