@@ -60,7 +60,7 @@ def save_telegram_user(user_id, first_name, last_name, username, telegram_id, pl
         if conn:
             conn.close()
 
-# Función para mostrar el disclaimer completo
+# Funcíón para mostrar el disclaimer completo
 @bot.message_handler(commands=['start'])
 def send_welcome_with_disclaimer(message):
     chat_id = message.chat.id
@@ -119,4 +119,5 @@ def start_webhook():
 
 if __name__ == "__main__":
     start_webhook()
+
 
