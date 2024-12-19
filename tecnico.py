@@ -14,67 +14,76 @@ TIMEFRAME = '1h'
 RSI_PERIOD = 14
 STOCH_PERIOD = 14
 ATR_PERIOD = 14
-TELEGRAM_BOT_TOKEN = '7545414519:AAE4pvyKjGrvexry-v6AGvv3TUgm0csi6J8'
-TELEGRAM_CHAT_ID = '-1002321451206'
+import os
+
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '7545414519:AAE4pvyKjGrvexry-v6AGvv3TUgm0csi6J8')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '-1002321451206')
+
 PREDICTION_DAYS = 7  # Default timeframe for price prediction
 
 # Función para generar gráficos avanzados
 def generate_advanced_charts(data, ticker):
-    print("Generando gráficos avanzados...")
-    plt.figure(figsize=(12, 8))
+    try:
+        print("Generando gráficos avanzados...")
+        plt.figure(figsize=(12, 8))
 
-    # Gráfico del precio con RSI
-    plt.subplot(3, 1, 1)
-    plt.plot(data.index, data[f'Close_{ticker}'], label='Precio de Cierre', color='blue')
-    plt.title(f"Precio de Cierre y RSI para {ticker}")
-    plt.xlabel("Fecha")
-    plt.ylabel("Precio de Cierre")
-    plt.legend()
+        # Gráfico del precio con RSI
+        plt.subplot(3, 1, 1)
+        plt.plot(data.index, data[f'Close_{ticker}'], label='Precio de Cierre', color='blue')
+        plt.title(f"Precio de Cierre y RSI para {ticker}")
+        plt.xlabel("Fecha")
+        plt.ylabel("Precio de Cierre")
+        plt.legend()
 
-    plt.twinx()  # Eje secundario para RSI
-    plt.plot(data.index, data['RSI'], label='RSI', color='orange', linestyle='--')
-    plt.ylabel("RSI")
-    plt.axhline(y=70, color='red', linestyle='--', label='Sobrecomprado (70)')
-    plt.axhline(y=30, color='green', linestyle='--', label='Sobrevendido (30)')
-    plt.legend(loc='upper left')
+        plt.twinx()  # Eje secundario para RSI
+        plt.plot(data.index, data['RSI'], label='RSI', color='orange', linestyle='--')
+        plt.ylabel("RSI")
+        plt.axhline(y=70, color='red', linestyle='--', label='Sobrecomprado (70)')
+        plt.axhline(y=30, color='green', linestyle='--', label='Sobrevendido (30)')
+        plt.legend(loc='upper left')
 
-    # Gráfico de MACD y Signal Line
-    plt.subplot(3, 1, 2)
-    plt.plot(data.index, data['MACD'], label='MACD', color='purple')
-    plt.plot(data.index, data['Signal_Line'], label='Signal Line', color='red', linestyle='--')
-    plt.title(f"MACD y Signal Line para {ticker}")
-    plt.xlabel("Fecha")
-    plt.ylabel("MACD")
-    plt.legend()
+        # Gráfico de MACD y Signal Line
+        plt.subplot(3, 1, 2)
+        plt.plot(data.index, data['MACD'], label='MACD', color='purple')
+        plt.plot(data.index, data['Signal_Line'], label='Signal Line', color='red', linestyle='--')
+        plt.title(f"MACD y Signal Line para {ticker}")
+        plt.xlabel("Fecha")
+        plt.ylabel("MACD")
+        plt.legend()
 
-    # Gráfico de ATR
-    plt.subplot(3, 1, 3)
-    plt.plot(data.index, data['ATR'], label='ATR', color='green')
-    plt.title(f"ATR (True Range Promedio) para {ticker}")
-    plt.xlabel("Fecha")
-    plt.ylabel("ATR")
-    plt.legend()
+        # Gráfico de ATR
+        plt.subplot(3, 1, 3)
+        plt.plot(data.index, data['ATR'], label='ATR', color='green')
+        plt.title(f"ATR (True Range Promedio) para {ticker}")
+        plt.xlabel("Fecha")
+        plt.ylabel("ATR")
+        plt.legend()
 
-    # Guardar y mostrar los gráficos
-    plt.tight_layout()
-    plt.savefig(f"{ticker}_advanced_charts.png")
-    print(f"Gráficos guardados como {ticker}_advanced_charts.png")
-    plt.show()
+        # Guardar y mostrar los gráficos
+        plt.tight_layout()
+        plt.savefig(f"{ticker}_advanced_charts.png")
+        print(f"Gráficos guardados como {ticker}_advanced_charts.png")
+        plt.show()
+    except Exception as e:
+        print(f"Error generando gráficos avanzados para {ticker}: {e}")
 
 # Fetch historical data
 def fetch_historical_data(ticker, interval):
-    print(f"Fetching historical data for {ticker} with interval {interval}...")
-    end_time = datetime.now(timezone.utc)
-    start_time = end_time - timedelta(days=60) if interval in ['1h', '30m', '15m'] else end_time - timedelta(days=10 * 365)
     try:
-        data = yf.download(ticker, start=start_time, end=end_time, interval=interval)
-        if data.empty:
-            raise ValueError(f"No data available for {ticker} with interval {interval}.")
-        print("Historical data fetched successfully.")
-        return data
+        print(f"Fetching historical data for {ticker} with interval {interval}...")
+        end_time = datetime.now(timezone.utc)
+        start_time = end_time - timedelta(days=60) if interval in ['1h', '30m', '15m'] else end_time - timedelta(days=10 * 365)
+        try:
+            data = yf.download(ticker, start=start_time, end=end_time, interval=interval)
+            if data.empty:
+                raise ValueError(f"No data available for {ticker} with interval {interval}.")
+            print("Historical data fetched successfully.")
+            return data
+        except Exception as e:
+            print(f"Error fetching data: {e}")
+            return None
     except Exception as e:
-        print(f"Error fetching data: {e}")
-        return None
+        print(f"Error obteniendo datos históricos para {ticker}: {e}")
 
 # Flatten Columns Function
 def flatten_columns(data):
@@ -108,75 +117,87 @@ def calculate_atr(data, period, ticker):
 
 # Feature Engineering
 def generate_features(data, ticker):
-    print("Generating features...")
-    data = flatten_columns(data)
-    data['RSI'] = calculate_rsi(data, RSI_PERIOD, ticker)
-    data['Stochastic'] = calculate_stochastic(data, STOCH_PERIOD, ticker)
-    data['ATR'] = calculate_atr(data, ATR_PERIOD, ticker)
-    data['SMA'] = data[f'Close_{ticker}'].rolling(window=20).mean()
-    data['EMA'] = data[f'Close_{ticker}'].ewm(span=20, adjust=False).mean()
-    data['MACD'] = data[f'Close_{ticker}'].ewm(span=12, adjust=False).mean() - data[f'Close_{ticker}'].ewm(span=26, adjust=False).mean()
-    data['Signal_Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
-    data['Volume_Change'] = data[f'Volume_{ticker}'].pct_change()
-    data['Lag_Close'] = data[f'Close_{ticker}'].shift(1)
-    data.dropna(inplace=True)
-    print("Features generated.")
-    return data
+    try:
+        print("Generating features...")
+        data = flatten_columns(data)
+        data['RSI'] = calculate_rsi(data, RSI_PERIOD, ticker)
+        data['Stochastic'] = calculate_stochastic(data, STOCH_PERIOD, ticker)
+        data['ATR'] = calculate_atr(data, ATR_PERIOD, ticker)
+        data['SMA'] = data[f'Close_{ticker}'].rolling(window=20).mean()
+        data['EMA'] = data[f'Close_{ticker}'].ewm(span=20, adjust=False).mean()
+        data['MACD'] = data[f'Close_{ticker}'].ewm(span=12, adjust=False).mean() - data[f'Close_{ticker}'].ewm(span=26, adjust=False).mean()
+        data['Signal_Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
+        data['Volume_Change'] = data[f'Volume_{ticker}'].pct_change()
+        data['Lag_Close'] = data[f'Close_{ticker}'].shift(1)
+        data.dropna(inplace=True)
+        print("Features generated.")
+        return data
+    except Exception as e:
+        print(f"Error generando características para {ticker}: {e}")
 
 # ML Training
 def train_model(data, ticker):
-    print("Training models...")
-    data['Label'] = np.where(data[f'Close_{ticker}'].shift(-1) > data[f'Close_{ticker}'], 1, 0)
-    features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
-    X = data[features]
-    y = data['Label']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    classifier = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.05, random_state=42)
-    classifier.fit(X_train, y_train)
-    y_pred = classifier.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Classification model accuracy: {accuracy:.2f}")
+    try:
+        print("Training models...")
+        data['Label'] = np.where(data[f'Close_{ticker}'].shift(-1) > data[f'Close_{ticker}'], 1, 0)
+        features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
+        X = data[features]
+        y = data['Label']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        classifier = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.05, random_state=42)
+        classifier.fit(X_train, y_train)
+        y_pred = classifier.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"Classification model accuracy: {accuracy:.2f}")
 
-    # Train regression model for price prediction
-    data['Future_Close'] = data[f'Close_{ticker}'].shift(-PREDICTION_DAYS)
-    regression_data = data.dropna(subset=['Future_Close'])
-    X_reg = regression_data[features]
-    y_reg = regression_data['Future_Close']
-    X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(X_reg, y_reg, test_size=0.2, random_state=42)
-    regressor = XGBRegressor(n_estimators=300, max_depth=6, learning_rate=0.05, random_state=42)
-    regressor.fit(X_train_reg, y_train_reg)
-    y_pred_reg = regressor.predict(X_test_reg)
-    mae = mean_absolute_error(y_test_reg, y_pred_reg)
-    print(f"Regression model trained. Mean Absolute Error: {mae:.2f}")
-    return classifier, regressor, accuracy
+        # Train regression model for price prediction
+        data['Future_Close'] = data[f'Close_{ticker}'].shift(-PREDICTION_DAYS)
+        regression_data = data.dropna(subset=['Future_Close'])
+        X_reg = regression_data[features]
+        y_reg = regression_data['Future_Close']
+        X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(X_reg, y_reg, test_size=0.2, random_state=42)
+        regressor = XGBRegressor(n_estimators=300, max_depth=6, learning_rate=0.05, random_state=42)
+        regressor.fit(X_train_reg, y_train_reg)
+        y_pred_reg = regressor.predict(X_test_reg)
+        mae = mean_absolute_error(y_test_reg, y_pred_reg)
+        print(f"Regression model trained. Mean Absolute Error: {mae:.2f}")
+        return classifier, regressor, accuracy
+    except Exception as e:
+        print(f"Error entrenando modelo para {ticker}: {e}")
 
 # Backtesting
 def backtest_strategy(data, model, ticker):
-    features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
-    data = flatten_columns(data)
-    data['Prediction'] = model.predict(data[features])
-    shifted_close = data[f'Close_{ticker}'].shift(-1)
-    success_conditions = (data['Prediction'] == 1) & (shifted_close > data[f'Close_{ticker}'])
-    success_count = success_conditions.sum()
-    total_signals = data['Prediction'].sum()
-    success_count = int(success_count)
-    total_signals = int(total_signals)
-    backtesting_success = (success_count / total_signals * 100) if total_signals > 0 else 0.0
-    return backtesting_success
+    try:
+        features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
+        data = flatten_columns(data)
+        data['Prediction'] = model.predict(data[features])
+        shifted_close = data[f'Close_{ticker}'].shift(-1)
+        success_conditions = (data['Prediction'] == 1) & (shifted_close > data[f'Close_{ticker}'])
+        success_count = success_conditions.sum()
+        total_signals = data['Prediction'].sum()
+        success_count = int(success_count)
+        total_signals = int(total_signals)
+        backtesting_success = (success_count / total_signals * 100) if total_signals > 0 else 0.0
+        return backtesting_success
+    except Exception as e:
+        print(f"Error en backtesting para {ticker}: {e}")
 
 # Generate Trading Signal
 def generate_trading_signal(model, data, regressor, ticker):
-    features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
-    latest_data = data.iloc[-1:]
-    prediction = model.predict(latest_data[features])[0]
-    future_price = regressor.predict(latest_data[features])[0]
-    if prediction == 1 and latest_data['RSI'].iloc[0] < 30:
-        action = "Comprar 🐂"
-    elif prediction == 0 and latest_data['RSI'].iloc[0] > 70:
-        action = "Vender 🐻"
-    else:
-        action = "Mantener 📊"
-    return action, future_price
+    try:
+        features = ['RSI', 'Stochastic', 'ATR', 'SMA', 'EMA', 'MACD', 'Signal_Line', 'Volume_Change', 'Lag_Close']
+        latest_data = data.iloc[-1:]
+        prediction = model.predict(latest_data[features])[0]
+        future_price = regressor.predict(latest_data[features])[0]
+        if prediction == 1 and latest_data['RSI'].iloc[0] < 30:
+            action = "Comprar 🐂"
+        elif prediction == 0 and latest_data['RSI'].iloc[0] > 70:
+            action = "Vender 🐻"
+        else:
+            action = "Mantener 📊"
+        return action, future_price
+    except Exception as e:
+        print(f"Error generando señal de trading para {ticker}: {e}")
 
 # Telegram Report
 def generate_telegram_report(stock_name, ticker, current_price, action, indicators, future_price, accuracy, backtesting_success):
@@ -240,33 +261,34 @@ def generate_telegram_report(stock_name, ticker, current_price, action, indicato
     send_telegram_message(message)
 
 def send_telegram_message(message, image_path=None):
-    # Enviar mensaje de texto
-    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
-    payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
-    response = requests.post(url, data=payload)
+    try:
+        url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
+        payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
+        response = requests.post(url, data=payload)
 
-    # Enviar imagen si se proporciona
-    if image_path:
-        url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto'
-        with open(image_path, 'rb') as photo:
-            files = {'photo': photo}
-            payload = {'chat_id': TELEGRAM_CHAT_ID}
-            response = requests.post(url, data=payload, files=files)
-            if response.status_code == 200:
-                print(f"Imagen enviada: {image_path}")
-            else:
-                print(f"Error enviando la imagen: {response.status_code} - {response.text}")
+        if image_path:
+            url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto'
+            with open(image_path, 'rb') as photo:
+                files = {'photo': photo}
+                payload = {'chat_id': TELEGRAM_CHAT_ID}
+                response = requests.post(url, data=payload, files=files)
+
+            if response.status_code != 200:
+                print(f"Error enviando imagen a Telegram: {response.status_code} - {response.text}")
+
+    except Exception as e:
+        print(f"Error enviando mensaje de Telegram: {e}")
 
 # Nueva función para el maestro
 def execute_technical_analysis(user, tickers):
     """
     Ejecuta el análisis técnico para un usuario específico y una lista de tickers.
     """
-    for ticker in tickers:
+    for ticker in set(tickers):  # Eliminar duplicados
         print(f"Procesando análisis técnico para {ticker} para el usuario {user}...")
         data = fetch_historical_data(ticker, TIMEFRAME)
-        if data is None:
-            print(f"No se pudo obtener datos para {ticker}.")
+        if data is None or data.empty:
+            print(f"No se pudo obtener datos o los datos están vacíos para {ticker}.")
             continue
         data = generate_features(data, ticker)
         model, regressor, accuracy = train_model(data, ticker)
@@ -318,7 +340,7 @@ def main():
     send_telegram_message(report_message, image_path=chart_path)
 
     while True:
-        latest_data = fetch_historical_data(ticker, TIMEFRAME)
+        latest_data = fetch_historical_data(ticker, TIMEFRAME) or data
         if latest_data is None:
             time.sleep(3600)
             continue

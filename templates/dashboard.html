@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard de monitoreo para controlar suscripciones, ganancias y usuarios.">
     <title>Dashboard de Desempeño y Estadísticas</title>
-    <!-- Incluimos Bootstrap para un diseño más limpio -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Incluimos Bootstrap 5 para un diseño más limpio -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body>
     <!-- Contenedor principal -->
@@ -20,11 +22,26 @@
             </div>
             <div class="card-body">
                 <ul class="list-group">
-                    <li class="list-group-item">Total de suscripciones activas: <strong>{{ stats.active_subscriptions }}</strong></li>
-                    <li class="list-group-item">Total de ganancias acumuladas: <strong>${{ stats.total_revenue }}</strong></li>
-                    <li class="list-group-item">Ganancias semanales: <strong>${{ stats.weekly_revenue }}</strong></li>
-                    <li class="list-group-item">Ganancias mensuales: <strong>${{ stats.monthly_revenue }}</strong></li>
-                    <li class="list-group-item">Ganancias anuales: <strong>${{ stats.yearly_revenue }}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Total de suscripciones activas:</span> 
+                        <strong>{{ stats.active_subscriptions | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Total de ganancias acumuladas:</span> 
+                        <strong>${{ stats.total_revenue | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ganancias semanales:</span> 
+                        <strong>${{ stats.weekly_revenue | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ganancias mensuales:</span> 
+                        <strong>${{ stats.monthly_revenue | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ganancias anuales:</span> 
+                        <strong>${{ stats.yearly_revenue | safe }}</strong>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -36,9 +53,18 @@
             </div>
             <div class="card-body">
                 <ul class="list-group">
-                    <li class="list-group-item">Suscriptores semanales: <strong>{{ stats.weekly_subscriptions }}</strong></li>
-                    <li class="list-group-item">Suscriptores mensuales: <strong>{{ stats.monthly_subscriptions }}</strong></li>
-                    <li class="list-group-item">Suscriptores anuales: <strong>{{ stats.yearly_subscriptions }}</strong></li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Suscriptores semanales:</span> 
+                        <strong>{{ stats.weekly_subscriptions | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Suscriptores mensuales:</span> 
+                        <strong>{{ stats.monthly_subscriptions | safe }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Suscriptores anuales:</span> 
+                        <strong>{{ stats.yearly_subscriptions | safe }}</strong>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -49,13 +75,13 @@
                 📉 Gráfico de Tendencia de Ganancias
             </div>
             <div class="card-body text-center">
-                <img class="img-fluid" src="data:image/png;base64,{{ revenue_chart }}" alt="Tendencia de Ganancias">
+                <img class="img-fluid" src="data:image/png;base64,{{ revenue_chart | safe }}" alt="Gráfico de la Tendencia de Ganancias">
             </div>
         </div>
     </div>
 
     <!-- Scripts de Bootstrap (para funcionalidad interactiva) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

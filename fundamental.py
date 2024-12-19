@@ -30,19 +30,23 @@ def send_telegram_message(message, image_path=None):
 
 # Función para obtener datos fundamentales
 def get_stock_fundamentals(stock_symbol):
-    stock = yf.Ticker(stock_symbol)
-    info = stock.info
-    price = info.get('regularMarketPrice') or info.get('previousClose')
-    kpis = {
-        'Price': round(price, 2) if price else None,
-        'PE': round(info.get('trailingPE'), 2) if info.get('trailingPE') else None,
-        'PS': round(info.get('priceToSalesTrailing12Months'), 2) if info.get('priceToSalesTrailing12Months') else None,
-        'PB': round(info.get('priceToBook'), 2) if info.get('priceToBook') else None,
-        'Dividend_Yield': round(info.get('dividendYield') * 100, 2) if info.get('dividendYield') else None,
-        'EPS': round(info.get('regularMarketEPS'), 2) if info.get('regularMarketEPS') else None,
-        'ROE': round(info.get('returnOnEquity') * 100, 2) if info.get('returnOnEquity') else None,
-    }
-    return kpis
+    try:
+        stock = yf.Ticker(stock_symbol)
+        info = stock.info
+        price = info.get('regularMarketPrice') or info.get('previousClose')
+        kpis = {
+            'Price': round(price, 2) if price else None,
+            'PE': round(info.get('trailingPE'), 2) if info.get('trailingPE') else None,
+            'PS': round(info.get('priceToSalesTrailing12Months'), 2) if info.get('priceToSalesTrailing12Months') else None,
+            'PB': round(info.get('priceToBook'), 2) if info.get('priceToBook') else None,
+            'Dividend_Yield': round(info.get('dividendYield') * 100, 2) if info.get('dividendYield') else None,
+            'EPS': round(info.get('regularMarketEPS'), 2) if info.get('regularMarketEPS') else None,
+            'ROE': round(info.get('returnOnEquity') * 100, 2) if info.get('returnOnEquity') else None,
+        }
+        return kpis
+    except Exception as e:
+        print(f"Error obteniendo KPIs para {stock_symbol}: {e}")
+        return None
 
 # Función para calcular valores de referencia dinámicos
 def calculate_dynamic_reference(stock_symbol):
@@ -98,43 +102,46 @@ def generate_fundamental_signal(kpis, reference):
 
 # Generar gráficos avanzados
 def generate_advanced_charts(data, kpis, reference, ticker, action):
-    plt.figure(figsize=(14, 10))
+    try:
 
-    # Gráfico de precio con puntos de compra/venta
-    plt.subplot(3, 1, 1)
-    plt.plot(data['Close'], label='Precio de Cierre', color='blue')
-    plt.axhline(y=kpis['Price'] * 0.85, color='green', linestyle='--', label='Infravalorado')
-    plt.axhline(y=kpis['Price'] * 1.15, color='red', linestyle='--', label='Sobrevalorado')
-    plt.scatter(
-        data.index[data['Close'] < kpis['Price'] * 0.85],
-        data['Close'][data['Close'] < kpis['Price'] * 0.85],
-        color='green', label='Punto de Compra', s=50, zorder=5
-    )
-    plt.scatter(
-        data.index[data['Close'] > kpis['Price'] * 1.15],
-        data['Close'][data['Close'] > kpis['Price'] * 1.15],
-        color='red', label='Punto de Venta', s=50, zorder=5
-    )
-    plt.title(f"Precio y Bandas para {ticker}")
-    plt.legend()
+        # Gráfico de precio con puntos de compra/venta
+        plt.subplot(3, 1, 1)
+        plt.plot(data['Close'], label='Precio de Cierre', color='blue')
+        plt.axhline(y=kpis['Price'] * 0.85, color='green', linestyle='--', label='Infravalorado')
+        plt.axhline(y=kpis['Price'] * 1.15, color='red', linestyle='--', label='Sobrevalorado')
+        plt.scatter(
+            data.index[data['Close'] < kpis['Price'] * 0.85],
+            data['Close'][data['Close'] < kpis['Price'] * 0.85],
+            color='green', label='Punto de Compra', s=50, zorder=5
+        )
+        plt.scatter(
+            data.index[data['Close'] > kpis['Price'] * 1.15],
+            data['Close'][data['Close'] > kpis['Price'] * 1.15],
+            color='red', label='Punto de Venta', s=50, zorder=5
+        )
+        plt.title(f"Precio y Bandas para {ticker}")
+        plt.legend()
 
-    # Gráfico de volatilidad
-    volatility = data['Close'].pct_change().rolling(window=30).std() * 100
-    plt.subplot(3, 1, 2)
-    plt.plot(volatility, label='Volatilidad (%)', color='purple')
-    plt.title(f"Volatilidad (30 días) para {ticker}")
-    plt.legend()
+        # Gráfico de volatilidad
+        volatility = data['Close'].pct_change().rolling(window=30).std() * 100
+        plt.subplot(3, 1, 2)
+        plt.plot(volatility, label='Volatilidad (%)', color='purple')
+        plt.title(f"Volatilidad (30 días) para {ticker}")
+        plt.legend()
 
-    # Gráfico de volumen
-    plt.subplot(3, 1, 3)
-    plt.bar(data.index, data['Volume'], label='Volumen', color='orange', alpha=0.7)
-    plt.title(f"Volumen para {ticker}")
-    plt.legend()
+        # Gráfico de volumen
+        plt.subplot(3, 1, 3)
+        plt.bar(data.index, data['Volume'], label='Volumen', color='orange', alpha=0.7)
+        plt.title(f"Volumen para {ticker}")
+        plt.legend()
 
-    plt.tight_layout()
-    plt.savefig(f"{ticker}_advanced_charts.png")
-    plt.show()
+        plt.tight_layout()
+        plt.savefig(f"{ticker}_advanced_charts.png")
+        plt.show()
 
+    except Exception as e:
+        print(f"Error generando gráficos avanzados: {e}")
+        
 # Nueva función para integrar con el maestro
 def execute_fundamental_analysis(ticker, stock_name):
     stock = yf.Ticker(ticker)
