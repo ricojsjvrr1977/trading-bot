@@ -16,6 +16,14 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # ---------------------------------------
+# 🚨 Verificación de las variables de entorno
+# ---------------------------------------
+if not DB_URL:
+    print("❌ Error: La variable de entorno 'DB_URL' no está configurada.")
+if not TELEGRAM_BOT_TOKEN:
+    print("❌ Error: La variable de entorno 'TELEGRAM_BOT_TOKEN' no está configurada.")
+
+# ---------------------------------------
 # 🌐 Inicialización de la aplicación Flask
 # ---------------------------------------
 app = Flask(__name__)
@@ -94,32 +102,30 @@ def send_welcome_with_disclaimer(message):
 def telegram_webhook():
     try:
         update = telebot.types.Update.de_json(request.get_json(force=True))
+        print(f"✅ Actualización recibida: {update}")
         bot.process_new_updates([update])
-        return 'OK', 200
+        return 'OK', 200  # 👈 Asegúrate de que siempre haya una respuesta positiva
     except Exception as e:
         print(f"❌ Error al procesar el webhook de Telegram: {e}")
-        return 'Internal Server Error', 500
-
+        return 'Internal Server Error', 500  # 👈 Respuesta clara en caso de error
 # ---------------------------------------
 # 🔗 Configurar webhook
 # ---------------------------------------
 def start_webhook():
     webhook_url = 'https://tradingbot-production-1412.up.railway.app/telegram-webhook'
     try:
-        current_webhook_info = bot.get_webhook_info()
-        if not current_webhook_info.url or current_webhook_info.url != webhook_url:
-            print("🔄 Configurando nuevo webhook...")
-            bot.set_webhook(url=webhook_url)
-            print(f"🟢 Webhook configurado correctamente: {webhook_url}")
-        else:
-            print(f"✅ El webhook ya está configurado: {webhook_url}")
+        print("🚀 Eliminando webhook anterior, si existe...")
+        bot.delete_webhook()  # 🔥 Esta línea garantiza que no haya conflicto de webhooks anteriores
+        print("🔄 Configurando nuevo webhook...")
+        bot.set_webhook(url=webhook_url)
+        print(f"🟢 Webhook configurado correctamente: {webhook_url}")
     except Exception as e:
         print(f"❌ Error configurando el webhook: {e}")
-
 # ---------------------------------------
 # 🚀 Iniciar la aplicación
 # ---------------------------------------
 if __name__ == "__main__":
-    start_webhook()
     port = int(os.environ.get("PORT", 5050))
     app.run(host="0.0.0.0", port=port)
+    start_webhook()  # 👈 Ahora el webhook se activa después de que la app está 100% funcional
+
